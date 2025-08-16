@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.nhk.or.jp)",
+      "WebFetch(domain:www2.nhk.or.jp)",
+      "Bash(node:*)",
+      "Bash(start \"C:\\Users\\inter\\OneDrive\\デスクトップ\\バイブコーディング実験\\木魚メトロノーム\\index.html\")",
+      "Bash(start \"C:\\Users\\inter\\OneDrive\\デスクトップ\\バイブコーディング実験\\木魚メトロノーム\\test.html\")",
+      "Bash(copy:*)",
+      "Bash(cp:*)",
+      "Bash(python:*)",
+      "Bash(npx http-server:*)",
+      "Bash(start http://localhost:8000)",
+      "Bash(start \"C:\\Users\\inter\\OneDrive\\デスクトップ\\バイブコーディング実験\\木魚メトロノーム\\simple.html\")",
+      "Bash(start \"C:\\Users\\inter\\OneDrive\\デスクトップ\\バイブコーディング実験\\木魚メトロノーム\\mokugyo.html\")"
+    ],
+    "deny": [],
+    "ask": [],
+    "defaultMode": "acceptEdits"
+  }
+}
