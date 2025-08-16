@@ -358,9 +358,28 @@
             
             initEventListeners() {
                 this.startStopBtn.addEventListener('click', () => this.toggleMetronome());
-                this.tempoSlider.addEventListener('input', (e) => this.setTempo(e.target.value));
-                this.tempoUpBtn.addEventListener('click', () => this.adjustTempo(1));
-                this.tempoDownBtn.addEventListener('click', () => this.adjustTempo(-1));
+                this.tempoSlider.addEventListener('input', (e) => {
+                    this.setTempo(e.target.value);
+                    this.ensureAudioContext(); // モバイル対応
+                });
+                this.tempoUpBtn.addEventListener('click', () => {
+                    this.adjustTempo(1);
+                    this.ensureAudioContext(); // モバイル対応
+                });
+                this.tempoDownBtn.addEventListener('click', () => {
+                    this.adjustTempo(-1);
+                    this.ensureAudioContext(); // モバイル対応
+                });
+                
+                // モバイル対応: 初回タッチでオーディオを有効化
+                const enableAudioOnFirstTouch = () => {
+                    this.ensureAudioContext();
+                    document.removeEventListener('touchstart', enableAudioOnFirstTouch);
+                    document.removeEventListener('click', enableAudioOnFirstTouch);
+                };
+                
+                document.addEventListener('touchstart', enableAudioOnFirstTouch, { once: true });
+                document.addEventListener('click', enableAudioOnFirstTouch, { once: true });
                 
                 // キーボードショートカット
                 document.addEventListener('keydown', (e) => {
@@ -380,9 +399,32 @@
             async initAudio() {
                 try {
                     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // モバイル対応: ユーザーインタラクション後にAudioContextを初期化
+                    if (this.audioContext.state === 'suspended') {
+                        console.log('AudioContext suspended, waiting for user interaction');
+                    }
                 } catch (error) {
                     console.warn('Web Audio API not supported:', error);
                 }
+            }
+            
+            async ensureAudioContext() {
+                if (!this.audioContext) {
+                    await this.initAudio();
+                }
+                
+                if (this.audioContext && this.audioContext.state === 'suspended') {
+                    try {
+                        await this.audioContext.resume();
+                        console.log('AudioContext resumed');
+                    } catch (error) {
+                        console.warn('Failed to resume AudioContext:', error);
+                        return false;
+                    }
+                }
+                
+                return this.audioContext && this.audioContext.state === 'running';
             }
             
             
@@ -410,7 +452,7 @@
                 }
             }
             
-            start() {
+            async start() {
                 // 既に再生中なら何もしない
                 if (this.isPlaying) {
                     return;
@@ -419,8 +461,16 @@
                 // 確実に既存のタイマーをクリア
                 this.forceStop();
                 
-                if (this.audioContext && this.audioContext.state === 'suspended') {
-                    this.audioContext.resume();
+                // モバイル対応: AudioContextが正常に動作することを確認
+                const audioReady = await this.ensureAudioContext();
+                if (!audioReady) {
+                    console.warn('AudioContext not ready, cannot start playback');
+                    // UI feedback for user
+                    this.startStopBtn.textContent = 'タップして音声を有効化';
+                    setTimeout(() => {
+                        this.startStopBtn.textContent = 'スタート';
+                    }, 2000);
+                    return;
                 }
                 
                 this.isPlaying = true;
@@ -511,7 +561,10 @@
             }
             
             playMokugyoSound() {
-                if (!this.audioContext) return;
+                if (!this.audioContext || this.audioContext.state !== 'running') {
+                    console.warn('AudioContext not ready for playback');
+                    return;
+                }
                 
                 try {
                     const now = this.audioContext.currentTime;
@@ -687,7 +740,10 @@
             
             
             playBellSound() {
-                if (!this.audioContext) return;
+                if (!this.audioContext || this.audioContext.state !== 'running') {
+                    console.warn('AudioContext not ready for bell playback');
+                    return;
+                }
                 
                 try {
                     const now = this.audioContext.currentTime;
