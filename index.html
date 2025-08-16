@@ -1038,32 +1038,12 @@
             }
             
             playMokugyoSound() {
-                // モバイル特別対応：確実に音を出すためのマルチパス
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                
-                if (isMobile) {
-                    // モバイルは確実性重視でHTML5 Audio優先
-                    console.log('Mobile detected: using HTML5 Audio for reliability');
-                    this.playHTML5Audio('mokugyo');
-                    
-                    // 同時にWeb Audio APIも試行（より良い音質のため）
-                    if (this.audioContext && this.audioContext.state === 'running') {
-                        setTimeout(() => {
-                            try {
-                                this.playWebAudioMokugyo();
-                            } catch (error) {
-                                console.warn('Mobile Web Audio API failed:', error);
-                            }
-                        }, 10);
-                    }
+                // 全デバイスでWeb Audio APIを強制使用（音統一のため）
+                if (this.audioContext && this.audioContext.state === 'running') {
+                    this.playWebAudioMokugyo();
                 } else {
-                    // PC/タブレットはWeb Audio API使用
-                    if (this.audioContext && this.audioContext.state === 'running') {
-                        this.playWebAudioMokugyo();
-                    } else {
-                        console.warn('Web Audio API unavailable, falling back to HTML5 Audio');
-                        this.playHTML5Audio('mokugyo');
-                    }
+                    // Web Audio APIが使えない場合のみHTML5 Audio
+                    this.playHTML5Audio('mokugyo');
                 }
             }
             
@@ -1242,32 +1222,12 @@
             
             
             playBellSound() {
-                // モバイル特別対応：確実に音を出すためのマルチパス
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                
-                if (isMobile) {
-                    // モバイルは確実性重視でHTML5 Audio優先
-                    console.log('Mobile detected: using HTML5 Audio for bell reliability');
-                    this.playHTML5Audio('bell');
-                    
-                    // 同時にWeb Audio APIも試行（より良い音質のため）
-                    if (this.audioContext && this.audioContext.state === 'running') {
-                        setTimeout(() => {
-                            try {
-                                this.playWebAudioBell();
-                            } catch (error) {
-                                console.warn('Mobile Web Audio API bell failed:', error);
-                            }
-                        }, 10);
-                    }
+                // 全デバイスでWeb Audio APIを強制使用（音統一のため）
+                if (this.audioContext && this.audioContext.state === 'running') {
+                    this.playWebAudioBell();
                 } else {
-                    // PC/タブレットはWeb Audio API使用
-                    if (this.audioContext && this.audioContext.state === 'running') {
-                        this.playWebAudioBell();
-                    } else {
-                        console.warn('Web Audio API unavailable for bell, falling back to HTML5 Audio');
-                        this.playHTML5Audio('bell');
-                    }
+                    // Web Audio APIが使えない場合のみHTML5 Audio
+                    this.playHTML5Audio('bell');
                 }
             }
             
