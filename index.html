@@ -487,9 +487,9 @@
             }
             
             generateMokugyoSound() {
-                // PC版Web Audio APIと完全に同じ音を再現
+                // 現在PCで実際に鳴っているWeb Audio APIの音を完全再現
                 const sampleRate = 44100;
-                const duration = 0.45; // PC版と同じ持続時間
+                const duration = 0.45;
                 const samples = Math.floor(sampleRate * duration);
                 const buffer = new ArrayBuffer(44 + samples * 2);
                 const view = new DataView(buffer);
@@ -515,105 +515,97 @@
                 writeString(36, 'data');
                 view.setUint32(40, samples * 2, true);
                 
-                // PC版のWeb Audio APIと完全に同じ音響合成
-                for (let i = 0; i < samples; i++) {
-                    const t = i / sampleRate;
-                    
-                    // 1. ノイズベースの木材アタック音（PC版と同じ）
-                    const fastDecay = Math.exp(-t * 180);
+                // 現在PC版で実際に使われているcreateHeavyWoodBufferを再現
+                const createHeavyWoodSample = (t) => {
+                    const sharpDecay = Math.exp(-t * 180);
                     const mediumDecay = Math.exp(-t * 120);
                     const shortDecay = Math.exp(-t * 80);
                     
                     const noise = (Math.random() * 2 - 1);
-                    const hardImpact = noise * fastDecay * 1.2;
-                    const woodCrack = Math.sin(t * 800 + Math.sin(t * 2000) * 0.3) * fastDecay * 0.8;
+                    const hardImpact = noise * sharpDecay * 1.2;
+                    const woodCrack = Math.sin(t * 800 + Math.sin(t * 2000) * 0.3) * sharpDecay * 0.8;
                     const solidResonance = Math.sin(t * 400) * mediumDecay * 0.6;
-                    const surfaceTexture = (Math.random() * 2 - 1) * Math.sin(t * 1200) * fastDecay * 0.4;
+                    const surfaceTexture = (Math.random() * 2 - 1) * Math.sin(t * 1200) * sharpDecay * 0.4;
                     const impact = Math.sin(t * 1500) * Math.exp(-t * 300) * 0.5;
                     
-                    const woodBuffer = (hardImpact + woodCrack + solidResonance + surfaceTexture + impact) * 0.7;
-                    
-                    // 2. 基音120Hz（PC版と同じ）- バンドパスフィルタ効果を模倣
-                    const bassFreq = 120 + (110 - 120) * Math.exp(-t * 12.5);
-                    const bassDecay = Math.exp(-t * 10);
-                    const bassComponent = Math.sin(2 * Math.PI * bassFreq * t) * bassDecay * 0.7;
-                    // バンドパスフィルタ効果（130Hz中心、Q=8）
-                    const bassFiltered = bassComponent * Math.exp(-Math.pow((bassFreq - 130) / 30, 2));
-                    
-                    // 3. 主要共鳴450Hz（PC版と同じ）
-                    const resonanceFreq = 450 + (400 - 450) * Math.exp(-t * 4);
-                    const resonanceDecay = Math.exp(-t * 3.33);
-                    const resonanceComponent = Math.sin(2 * Math.PI * resonanceFreq * t) * resonanceDecay * 0.4;
-                    // バンドパスフィルタ効果（480Hz中心、Q=8）
-                    const resonanceFiltered = resonanceComponent * Math.exp(-Math.pow((resonanceFreq - 480) / 30, 2));
-                    
-                    // 4. 高次共鳴720Hz（PC版と同じ）
-                    const highFreq = 720 + (660 - 720) * Math.exp(-t * 5);
-                    const highDecay = Math.exp(-t * 4);
-                    const highComponent = Math.sin(2 * Math.PI * highFreq * t) * highDecay * 0.25;
-                    // バンドパスフィルタ効果（750Hz中心、Q=10）
-                    const highFiltered = highComponent * Math.exp(-Math.pow((highFreq - 750) / 37.5, 2));
-                    
-                    // 5. 中音域350Hz（PC版と同じ）
-                    const midFreq = 350 + (320 - 350) * Math.exp(-t * 6.67);
-                    const midDecay = Math.exp(-t * 5.56);
-                    const midComponent = Math.sin(2 * Math.PI * midFreq * t) * midDecay * 0.4;
-                    // バンドパスフィルタ効果（360Hz中心、Q=12）
-                    const midFiltered = midComponent * Math.exp(-Math.pow((midFreq - 360) / 15, 2));
-                    
-                    // 6. 高音クリック1800Hz（PC版と同じ）
-                    const clickFreq = 1800 + (1200 - 1800) * Math.exp(-t * 125);
-                    const clickDecay = Math.exp(-t * 66.67);
-                    const clickComponent = Math.sin(2 * Math.PI * clickFreq * t) * clickDecay * 0.3;
-                    // バンドパスフィルタ効果（1500Hz中心、Q=5）
-                    const clickFiltered = clickComponent * Math.exp(-Math.pow((clickFreq - 1500) / 150, 2));
-                    
-                    // 7. 金属的高音2400Hz（PC版と同じ）
-                    const metallicFreq = 2400 + (2000 - 2400) * Math.exp(-t * 20);
-                    const metallicDecay = Math.exp(-t * 16.67);
-                    const metallicComponent = Math.sin(2 * Math.PI * metallicFreq * t) * metallicDecay * 0.2;
-                    // バンドパスフィルタ効果（2200Hz中心、Q=15）
-                    const metallicFiltered = metallicComponent * Math.exp(-Math.pow((metallicFreq - 2200) / 73.33, 2));
-                    
-                    // PC版と同じ成分とタイミングで合成
+                    return (hardImpact + woodCrack + solidResonance + surfaceTexture + impact) * 0.7;
+                };
+                
+                // PC版と完全に同じ音響合成
+                for (let i = 0; i < samples; i++) {
+                    const t = i / sampleRate;
                     let sample = 0;
                     
-                    // アタック成分（0-0.08秒）
+                    // 1. アタック音（0-0.08秒）- PC版と同じ
                     if (t <= 0.08) {
-                        sample += woodBuffer * 1.2;
+                        const attackDecay = Math.exp(-t * 12.5);
+                        const woodSample = createHeavyWoodSample(t);
+                        // バンドパスフィルタ効果（400Hz中心、Q=3）
+                        const filtered = woodSample * Math.exp(-Math.pow((400 - 400) / 66.67, 2));
+                        sample += filtered * 1.2 * attackDecay;
                     }
                     
-                    // 金属高音（0.001-0.06秒）
+                    // 2. 金属高音（0.001-0.06秒）- PC版と同じ
                     if (t >= 0.001 && t <= 0.06) {
-                        sample += metallicFiltered * 0.5;
+                        const metallicFreq = 2400 + (2000 - 2400) * Math.exp(-t * 20);
+                        const metallicDecay = Math.exp(-t * 16.67);
+                        const metallicOsc = Math.sin(2 * Math.PI * metallicFreq * t);
+                        // バンドパスフィルタ効果（2200Hz中心、Q=15）
+                        const filtered = metallicOsc * Math.exp(-Math.pow((metallicFreq - 2200) / 73.33, 2));
+                        sample += filtered * 0.2 * metallicDecay;
                     }
                     
-                    // 基音（0.005-0.1秒）
+                    // 3. 基音（0.005-0.1秒）- PC版と同じ
                     if (t >= 0.005 && t <= 0.1) {
-                        sample += bassFiltered * 0.35;
+                        const bassFreq = 120 + (110 - 120) * Math.exp(-t * 12.5);
+                        const bassDecay = Math.exp(-t * 10);
+                        const bassOsc = Math.sin(2 * Math.PI * bassFreq * t);
+                        // バンドパスフィルタ効果（130Hz中心、Q=8）
+                        const filtered = bassOsc * Math.exp(-Math.pow((bassFreq - 130) / 16.25, 2));
+                        sample += filtered * 0.7 * bassDecay;
                     }
                     
-                    // 主要共鳴（0.015-0.3秒）
+                    // 4. 主要共鳴（0.015-0.3秒）- PC版と同じ
                     if (t >= 0.015 && t <= 0.3) {
-                        sample += resonanceFiltered * 0.2;
+                        const resonanceFreq = 450 + (400 - 450) * Math.exp(-t * 4);
+                        const resonanceDecay = Math.exp(-t * 3.33);
+                        const resonanceOsc = Math.sin(2 * Math.PI * resonanceFreq * t);
+                        // バンドパスフィルタ効果（480Hz中心、Q=8）
+                        const filtered = resonanceOsc * Math.exp(-Math.pow((resonanceFreq - 480) / 30, 2));
+                        sample += filtered * 0.4 * resonanceDecay;
                     }
                     
-                    // 高次共鳴（0.02-0.25秒）
+                    // 5. 高次共鳴（0.02-0.25秒）- PC版と同じ
                     if (t >= 0.02 && t <= 0.25) {
-                        sample += highFiltered * 0.125;
+                        const highFreq = 720 + (660 - 720) * Math.exp(-t * 5);
+                        const highDecay = Math.exp(-t * 4);
+                        const highOsc = Math.sin(2 * Math.PI * highFreq * t);
+                        // バンドパスフィルタ効果（750Hz中心、Q=10）
+                        const filtered = highOsc * Math.exp(-Math.pow((highFreq - 750) / 37.5, 2));
+                        sample += filtered * 0.25 * highDecay;
                     }
                     
-                    // 中音域（0.02-0.18秒）
+                    // 6. 中音域（0.02-0.18秒）- PC版と同じ
                     if (t >= 0.02 && t <= 0.18) {
-                        sample += midFiltered * 0.2;
+                        const midFreq = 350 + (320 - 350) * Math.exp(-t * 6.67);
+                        const midDecay = Math.exp(-t * 5.56);
+                        const midOsc = Math.sin(2 * Math.PI * midFreq * t);
+                        // バンドパスフィルタ効果（360Hz中心、Q=12）
+                        const filtered = midOsc * Math.exp(-Math.pow((midFreq - 360) / 15, 2));
+                        sample += filtered * 0.4 * midDecay;
                     }
                     
-                    // 高音クリック（0.002-0.015秒）
+                    // 7. 高音クリック（0.002-0.015秒）- PC版と同じ
                     if (t >= 0.002 && t <= 0.015) {
-                        sample += clickFiltered * 0.15;
+                        const clickFreq = 1800 + (1200 - 1800) * Math.exp(-t * 125);
+                        const clickDecay = Math.exp(-t * 66.67);
+                        const clickOsc = Math.sin(2 * Math.PI * clickFreq * t);
+                        // バンドパスフィルタ効果（1500Hz中心、Q=5）
+                        const filtered = clickOsc * Math.exp(-Math.pow((clickFreq - 1500) / 150, 2));
+                        sample += filtered * 0.3 * clickDecay;
                     }
                     
-                    // PC版と同じ音量制限
+                    // PC版と同じ最終出力レベル
                     const clampedSample = Math.max(-1, Math.min(1, sample * 0.8));
                     view.setInt16(44 + i * 2, clampedSample * 32767, true);
                 }
@@ -778,36 +770,17 @@
                         return;
                     }
                     
-                    // 音声が準備できていない場合は再生をスキップ
-                    if (audio.readyState < 2) {
-                        console.warn(`Audio ${type} not ready, skipping`);
-                        return;
-                    }
-                    
-                    // 既に再生中の場合は新しいインスタンスを作成
-                    if (!audio.paused) {
-                        // 元の音声を複製して同時再生を可能にする
-                        const newAudio = audio.cloneNode();
-                        newAudio.volume = type === 'bell' ? 0.7 : 0.8;
-                        newAudio.play().catch(error => {
-                            console.warn(`Cloned audio ${type} play failed:`, error);
-                        });
-                        return;
-                    }
-                    
-                    // 音声をリセット
+                    // 音声を確実にリセット
                     audio.currentTime = 0;
                     audio.volume = type === 'bell' ? 0.7 : 0.8;
                     
-                    // 再生
+                    // 即座に再生（リズムの安定性を重視）
                     const playPromise = audio.play();
                     
                     if (playPromise !== undefined) {
-                        playPromise.then(() => {
-                            console.log(`HTML5 Audio ${type} played successfully`);
-                        }).catch(error => {
+                        playPromise.catch(error => {
                             console.warn(`HTML5 Audio ${type} play failed:`, error);
-                            // フォールバック: 新しい音声インスタンスを作成
+                            // 即座にフォールバック実行
                             this.createFallbackAudio(type);
                         });
                     }
