@@ -340,10 +340,13 @@
                 this.audioContext = null;
                 this.beatCount = 0;
                 this.bellInterval = 8; // 8拍ごとに鐘の音
+                this.useHTML5Audio = false; // フォールバックフラグ
+                this.audioElements = {}; // HTML5 Audio要素
                 
                 this.initElements();
                 this.initEventListeners();
                 this.initAudio();
+                this.initHTML5Audio(); // HTML5 Audioバックアップ
             }
             
             initElements() {
@@ -419,8 +422,83 @@
                         console.log('AudioContext suspended, waiting for user interaction');
                     }
                 } catch (error) {
-                    console.warn('Web Audio API not supported:', error);
+                    console.warn('Web Audio API not supported, using HTML5 Audio fallback:', error);
+                    this.useHTML5Audio = true;
                 }
+            }
+            
+            initHTML5Audio() {
+                // スマホでの確実な動作のため、HTML5 Audioを優先使用
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                
+                if (isMobile) {
+                    this.useHTML5Audio = true;
+                    console.log('Mobile device detected, using HTML5 Audio');
+                }
+                
+                // 短いクリック音とベル音を生成
+                this.audioElements.mokugyo = new Audio();
+                this.audioElements.bell = new Audio();
+                
+                // プリロード設定
+                this.audioElements.mokugyo.preload = 'auto';
+                this.audioElements.bell.preload = 'auto';
+                
+                // 実際の短い音声データ（より短く、確実に再生される）
+                const mokugyoData = this.generateClickSound(800, 0.1);  // 800Hz, 0.1秒
+                const bellData = this.generateClickSound(1200, 0.15);   // 1200Hz, 0.15秒
+                
+                this.audioElements.mokugyo.src = mokugyoData;
+                this.audioElements.bell.src = bellData;
+                
+                // ロード
+                this.audioElements.mokugyo.load();
+                this.audioElements.bell.load();
+                
+                // 初回タッチで有効化
+                this.enableHTML5AudioOnTouch();
+                
+                console.log('HTML5 Audio initialized for mobile');
+            }
+            
+            generateClickSound(frequency, duration) {
+                // WAVファイルのヘッダーを作成
+                const sampleRate = 22050; // 低いサンプルレートで軽量化
+                const samples = Math.floor(sampleRate * duration);
+                const buffer = new ArrayBuffer(44 + samples * 2);
+                const view = new DataView(buffer);
+                
+                // WAVヘッダー
+                const writeString = (offset, string) => {
+                    for (let i = 0; i < string.length; i++) {
+                        view.setUint8(offset + i, string.charCodeAt(i));
+                    }
+                };
+                
+                writeString(0, 'RIFF');
+                view.setUint32(4, 36 + samples * 2, true);
+                writeString(8, 'WAVE');
+                writeString(12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true);
+                view.setUint16(22, 1, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * 2, true);
+                view.setUint16(32, 2, true);
+                view.setUint16(34, 16, true);
+                writeString(36, 'data');
+                view.setUint32(40, samples * 2, true);
+                
+                // 音声データ生成
+                for (let i = 0; i < samples; i++) {
+                    const t = i / sampleRate;
+                    const envelope = Math.exp(-t * 10); // 減衰エンベロープ
+                    const sample = Math.sin(2 * Math.PI * frequency * t) * envelope * 0.3;
+                    view.setInt16(44 + i * 2, sample * 32767, true);
+                }
+                
+                const blob = new Blob([buffer], { type: 'audio/wav' });
+                return URL.createObjectURL(blob);
             }
             
             async ensureAudioContext() {
@@ -504,6 +582,59 @@
                 gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
                 
                 source.start(this.audioContext.currentTime);
+            }
+            
+            playHTML5Audio(type) {
+                try {
+                    const audio = this.audioElements[type];
+                    if (!audio) {
+                        console.warn(`HTML5 Audio element for ${type} not found`);
+                        return;
+                    }
+                    
+                    // 既に再生中の場合は停止してリセット
+                    audio.pause();
+                    audio.currentTime = 0;
+                    
+                    // 音量調整
+                    audio.volume = type === 'bell' ? 0.8 : 0.9;
+                    
+                    // 再生
+                    const playPromise = audio.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            console.log(`HTML5 Audio ${type} played successfully`);
+                        }).catch(error => {
+                            console.warn(`HTML5 Audio ${type} play failed:`, error);
+                            // スマホでも動作するように、ユーザーインタラクション後に再試行
+                            this.enableHTML5AudioOnTouch();
+                        });
+                    }
+                } catch (error) {
+                    console.warn(`HTML5 Audio ${type} playback error:`, error);
+                }
+            }
+            
+            enableHTML5AudioOnTouch() {
+                const enableAudio = () => {
+                    // 全ての音声要素を一度再生して有効化
+                    Object.values(this.audioElements).forEach(audio => {
+                        audio.muted = true;
+                        audio.play().then(() => {
+                            audio.pause();
+                            audio.currentTime = 0;
+                            audio.muted = false;
+                            console.log('HTML5 Audio enabled on touch');
+                        }).catch(() => {});
+                    });
+                    
+                    document.removeEventListener('touchstart', enableAudio);
+                    document.removeEventListener('click', enableAudio);
+                };
+                
+                document.addEventListener('touchstart', enableAudio, { once: true, passive: true });
+                document.addEventListener('click', enableAudio, { once: true });
             }
             
             
@@ -657,8 +788,9 @@
             }
             
             playMokugyoSound() {
-                if (!this.audioContext || this.audioContext.state !== 'running') {
-                    console.warn('AudioContext not ready for playback');
+                // HTML5 Audioフォールバックを優先的に使用（スマホ対応）
+                if (this.useHTML5Audio || !this.audioContext || this.audioContext.state !== 'running') {
+                    this.playHTML5Audio('mokugyo');
                     return;
                 }
                 
@@ -836,8 +968,9 @@
             
             
             playBellSound() {
-                if (!this.audioContext || this.audioContext.state !== 'running') {
-                    console.warn('AudioContext not ready for bell playback');
+                // HTML5 Audioフォールバックを優先的に使用（スマホ対応）
+                if (this.useHTML5Audio || !this.audioContext || this.audioContext.state !== 'running') {
+                    this.playHTML5Audio('bell');
                     return;
                 }
                 
