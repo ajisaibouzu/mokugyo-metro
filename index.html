@@ -374,14 +374,17 @@
                     this.ensureAudioContext(); // モバイル対応
                 });
                 
-                // デバイス別オーディオ有効化戦略
+                // 全デバイスでWeb Audio APIを強制有効化
                 const enableAudioOnInteraction = async () => {
-                    console.log('User interaction detected, enabling audio...');
+                    console.log('User interaction detected, enabling Web Audio API...');
                     
-                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                    
-                    if (isMobile) {
-                        // モバイル：HTML5 Audioを確実に有効化
+                    // 全デバイスでWeb Audio APIを最優先で有効化
+                    const success = await this.ensureAudioContext();
+                    if (success) {
+                        console.log('Web Audio API successfully enabled on all devices');
+                    } else {
+                        console.warn('Web Audio API enablement failed, HTML5 Audio will be used as fallback');
+                        // Web Audio APIが失敗した場合のみHTML5 Audioを有効化
                         try {
                             for (const audio of Object.values(this.audioElements)) {
                                 audio.muted = true;
@@ -390,17 +393,9 @@
                                 audio.currentTime = 0;
                                 audio.muted = false;
                             }
-                            console.log('Mobile HTML5 Audio successfully enabled');
+                            console.log('Fallback HTML5 Audio enabled');
                         } catch (error) {
-                            console.warn('Mobile HTML5 Audio enablement failed:', error);
-                        }
-                    } else {
-                        // PC/タブレット：Web Audio APIを有効化
-                        const success = await this.ensureAudioContext();
-                        if (success) {
-                            console.log('Web Audio API successfully enabled');
-                        } else {
-                            console.warn('Web Audio API enablement failed');
+                            console.warn('HTML5 Audio fallback also failed:', error);
                         }
                     }
                     
@@ -450,16 +445,9 @@
             }
             
             initHTML5Audio() {
-                // デバイス別最適化：モバイルはHTML5 Audio、PC/タブレットはWeb Audio API
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                
-                if (isMobile) {
-                    this.useHTML5Audio = true;
-                    console.log('Mobile device: HTML5 Audio enabled for reliability');
-                } else {
-                    this.useHTML5Audio = false;
-                    console.log('Desktop/Tablet: Web Audio API enabled for quality');
-                }
+                // 全デバイスでWeb Audio APIを優先使用（PC版音質統一）
+                this.useHTML5Audio = false;
+                console.log('All devices: Web Audio API enabled for PC-quality sound');
                 
                 // HTML5 Audio要素を作成（モバイル用）
                 this.audioElements.mokugyo = new Audio();
@@ -991,24 +979,16 @@
             }
             
             playMokugyoSound() {
-                // モバイル専用：確実に音を出すためのマルチパス対応
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                
-                if (isMobile) {
-                    // モバイルは確実性を優先してHTML5 Audioを使用
-                    console.log('Mobile device: using HTML5 Audio for reliability');
-                    this.playHTML5Audio('mokugyo');
-                    return;
-                } else if (this.audioContext && this.audioContext.state === 'running') {
-                    // PC/タブレットはWeb Audio APIを使用
-                    console.log('Desktop/Tablet: using Web Audio API');
+                // 全デバイスでWeb Audio APIを最優先使用（PC版音質統一）
+                if (this.audioContext && this.audioContext.state === 'running') {
+                    // Web Audio APIが利用可能な場合は必ず使用
                     this.playWebAudioMokugyo();
                     return;
-                } else {
-                    // フォールバック
-                    console.warn('Web Audio API unavailable, falling back to HTML5 Audio');
-                    this.playHTML5Audio('mokugyo');
                 }
+                
+                // Web Audio APIが使用不可の場合のみHTML5 Audioを使用
+                console.warn('Web Audio API unavailable, falling back to HTML5 Audio');
+                this.playHTML5Audio('mokugyo');
             }
             
             playWebAudioMokugyo() {
@@ -1186,24 +1166,16 @@
             
             
             playBellSound() {
-                // モバイル専用：確実に音を出すためのマルチパス対応
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                
-                if (isMobile) {
-                    // モバイルは確実性を優先してHTML5 Audioを使用
-                    console.log('Mobile device: using HTML5 Audio for bell reliability');
-                    this.playHTML5Audio('bell');
-                    return;
-                } else if (this.audioContext && this.audioContext.state === 'running') {
-                    // PC/タブレットはWeb Audio APIを使用
-                    console.log('Desktop/Tablet: using Web Audio API for bell');
+                // 全デバイスでWeb Audio APIを最優先使用（PC版音質統一）
+                if (this.audioContext && this.audioContext.state === 'running') {
+                    // Web Audio APIが利用可能な場合は必ず使用
                     this.playWebAudioBell();
                     return;
-                } else {
-                    // フォールバック
-                    console.warn('Web Audio API unavailable for bell, falling back to HTML5 Audio');
-                    this.playHTML5Audio('bell');
                 }
+                
+                // Web Audio APIが使用不可の場合のみHTML5 Audioを使用
+                console.warn('Web Audio API unavailable for bell, falling back to HTML5 Audio');
+                this.playHTML5Audio('bell');
             }
             
             playWebAudioBell() {
