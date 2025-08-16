@@ -494,45 +494,53 @@
                 for (let i = 0; i < samples; i++) {
                     const t = i / sampleRate;
                     
-                    // 木材らしい減衰特性（乾いた響き）
-                    const sharpAttack = Math.exp(-t * 60);      // 非常に鋭い打撃音
-                    const woodDecay = Math.exp(-t * 12);        // 木材らしい中程度の減衰
-                    const hollowDecay = Math.exp(-t * 4);       // 空洞共鳴の長い余韻
+                    // PC版に近い減衰特性（深みと重みを保持）
+                    const sharpAttack = Math.exp(-t * 50);      // 鋭い打撃音
+                    const mediumDecay = Math.exp(-t * 8);       // 中程度の響き（重み）
+                    const longDecay = Math.exp(-t * 3);         // 長い余韻（深み）
                     
-                    // 1. 木材表面への打撃音（主成分）- ノイズベース
-                    const impactNoise = (Math.random() * 2 - 1) * sharpAttack * 0.6;
+                    // 1. 重厚な低音基音（木魚の重み）
+                    const heavyBass = Math.sin(2 * Math.PI * 120 * t) * longDecay * 0.5;
                     
-                    // 2. 木材の密度による低音共鳴（空洞効果）
-                    const hollowResonance = Math.sin(2 * Math.PI * 95 * t) * hollowDecay * 0.4;
+                    // 2. 木材打撃音（リアルな質感）
+                    const impactNoise = (Math.random() * 2 - 1) * sharpAttack * 0.4;
                     
-                    // 3. 木材表面の粒状質感（高周波ノイズ）
-                    const surfaceTexture = (Math.random() * 2 - 1) * sharpAttack * 0.3 * (1 + Math.sin(2 * Math.PI * 800 * t) * 0.5);
+                    // 3. 木魚の主要響き（中音域の豊かさ）
+                    const mainResonance = Math.sin(2 * Math.PI * 450 * t) * mediumDecay * 0.35;
                     
-                    // 4. 木材の響き（中音域の自然共鳴）
-                    const woodResonance = Math.sin(2 * Math.PI * 280 * t + Math.random() * 0.1) * woodDecay * 0.25;
+                    // 4. 高次倍音（音の明瞭さ）
+                    const higherHarmonic = Math.sin(2 * Math.PI * 720 * t) * mediumDecay * 0.25;
                     
-                    // 5. 打撃の反響（空洞内の音の跳ね返り）
-                    const echoComponent = Math.sin(2 * Math.PI * 420 * t) * Math.exp(-t * 15) * 0.2;
+                    // 5. 空洞共鳴（深みと奥行き）
+                    const hollowResonance = Math.sin(2 * Math.PI * 300 * t + Math.sin(2 * Math.PI * 5 * t) * 0.1) * mediumDecay * 0.3;
                     
-                    // 6. 木材の乾いた響き（高音域の短い振動）
-                    const dryWoodTone = Math.sin(2 * Math.PI * 650 * t + Math.sin(2 * Math.PI * 1200 * t) * 0.2) * Math.exp(-t * 25) * 0.15;
+                    // 6. 木材の質感（表面のざらつき感）
+                    const woodTexture = Math.sin(2 * Math.PI * 800 * t) * sharpAttack * 0.2;
                     
-                    // 7. 木の繊維の振動（非常に短い高周波成分）
-                    const fiberVibration = (Math.random() * 2 - 1) * Math.exp(-t * 100) * 0.1 * Math.sin(2 * Math.PI * 1800 * t);
+                    // 7. 高周波の鋭さ（アタック感）
+                    const sharpClick = Math.sin(2 * Math.PI * 1500 * t) * Math.exp(-t * 80) * 0.15;
                     
-                    // 8. 空洞共鳴の深み（低周波の豊かさ）
-                    const deepResonance = Math.sin(2 * Math.PI * 60 * t + Math.sin(2 * Math.PI * 3 * t) * 0.05) * hollowDecay * 0.3;
+                    // 8. 超低音の重み（音の厚み）
+                    const deepWeight = Math.sin(2 * Math.PI * 80 * t) * longDecay * 0.4;
                     
-                    // 全成分を自然な比率で合成（木材らしい音色）
+                    // 9. 中音域の充実感
+                    const midFullness = Math.sin(2 * Math.PI * 360 * t) * mediumDecay * 0.25;
+                    
+                    // 10. 木の繊維音（微細な質感）
+                    const fiberSound = (Math.random() * 2 - 1) * Math.exp(-t * 60) * 0.15;
+                    
+                    // PC版に近い音質バランス（深みと重みを重視）
                     let sample = 
-                        impactNoise * 0.35 +           // 打撃音（主要）
-                        hollowResonance * 0.25 +       // 空洞共鳴
-                        surfaceTexture * 0.15 +        // 表面質感
-                        woodResonance * 0.15 +         // 木材響き
-                        echoComponent * 0.05 +         // 反響
-                        dryWoodTone * 0.03 +           // 乾いた音色
-                        fiberVibration * 0.01 +        // 繊維振動
-                        deepResonance * 0.01;          // 深い共鳴
+                        heavyBass * 0.25 +             // 重厚な基音
+                        deepWeight * 0.2 +             // 超低音の重み
+                        mainResonance * 0.2 +          // 主要響き
+                        hollowResonance * 0.15 +       // 空洞共鳴
+                        higherHarmonic * 0.1 +         // 高次倍音
+                        midFullness * 0.05 +           // 中音域充実
+                        woodTexture * 0.03 +           // 木材質感
+                        impactNoise * 0.015 +          // 打撃音（控えめ）
+                        sharpClick * 0.005 +           // 高周波（微量）
+                        fiberSound * 0.005;            // 繊維音（微量）
                     
                     // 木材らしい非線形効果（わずかな歪み）
                     if (Math.abs(sample) > 0.3) {
@@ -868,18 +876,14 @@
                 
                 const interval = 60000 / this.tempo;
                 
-                // 少し遅延してから開始することで重複を防ぐ
-                setTimeout(() => {
-                    if (this.isPlaying) {  // まだ再生中の場合のみ
-                        // 最初のビートを実行
-                        this.beat();
-                        
-                        // 定期実行を開始
-                        this.intervalId = setInterval(() => {
-                            this.beat();
-                        }, interval);
-                    }
-                }, 10);  // 10ms の遅延
+                // 正確なタイミングでメトロノームを開始
+                // 最初のビートを即座に実行
+                this.beat();
+                
+                // 一定間隔での定期実行（安定したリズム）
+                this.intervalId = setInterval(() => {
+                    this.beat();
+                }, interval);
             }
             
             stop() {
@@ -920,11 +924,6 @@
             beat() {
                 // 再生状態を確認
                 if (!this.isPlaying) {
-                    return;
-                }
-                
-                // AudioContextの状態も確認
-                if (!this.audioContext || this.audioContext.state !== 'running') {
                     return;
                 }
                 
