@@ -462,9 +462,9 @@
             }
             
             generateMokugyoSound() {
-                // 木魚の音に近い複雑な波形を生成
-                const sampleRate = 44100; // 高品質サンプルレート
-                const duration = 0.4; // 長めの持続時間
+                // 本物の木魚の音：木材を叩く乾いた響きを再現
+                const sampleRate = 44100;
+                const duration = 0.5; // 木魚らしい持続時間
                 const samples = Math.floor(sampleRate * duration);
                 const buffer = new ArrayBuffer(44 + samples * 2);
                 const view = new DataView(buffer);
@@ -490,35 +490,57 @@
                 writeString(36, 'data');
                 view.setUint32(40, samples * 2, true);
                 
-                // 木魚らしい複雑な音声データ生成
+                // 本物の木魚：バチが木の表面を叩く音を再現
                 for (let i = 0; i < samples; i++) {
                     const t = i / sampleRate;
                     
-                    // 複数の減衰エンベロープ
-                    const fastDecay = Math.exp(-t * 50);   // 鋭いアタック
-                    const mediumDecay = Math.exp(-t * 8);  // 中程度の響き
-                    const slowDecay = Math.exp(-t * 3);    // 長い余韻
+                    // 木材らしい減衰特性（乾いた響き）
+                    const sharpAttack = Math.exp(-t * 60);      // 非常に鋭い打撃音
+                    const woodDecay = Math.exp(-t * 12);        // 木材らしい中程度の減衰
+                    const hollowDecay = Math.exp(-t * 4);       // 空洞共鳴の長い余韻
                     
-                    // 木魚の基音とその倍音
-                    const fundamental = Math.sin(2 * Math.PI * 120 * t) * slowDecay * 0.3;
-                    const harmonic2 = Math.sin(2 * Math.PI * 450 * t) * mediumDecay * 0.25;
-                    const harmonic3 = Math.sin(2 * Math.PI * 720 * t) * mediumDecay * 0.15;
+                    // 1. 木材表面への打撃音（主成分）- ノイズベース
+                    const impactNoise = (Math.random() * 2 - 1) * sharpAttack * 0.6;
                     
-                    // 木材の硬質感（ノイズ成分）
-                    const noise = (Math.random() * 2 - 1) * fastDecay * 0.2;
+                    // 2. 木材の密度による低音共鳴（空洞効果）
+                    const hollowResonance = Math.sin(2 * Math.PI * 95 * t) * hollowDecay * 0.4;
                     
-                    // 木材の共鳴音
-                    const resonance1 = Math.sin(2 * Math.PI * 300 * t + Math.sin(2 * Math.PI * 5 * t) * 0.1) * mediumDecay * 0.2;
-                    const resonance2 = Math.sin(2 * Math.PI * 800 * t) * fastDecay * 0.15;
+                    // 3. 木材表面の粒状質感（高周波ノイズ）
+                    const surfaceTexture = (Math.random() * 2 - 1) * sharpAttack * 0.3 * (1 + Math.sin(2 * Math.PI * 800 * t) * 0.5);
                     
-                    // 高周波の木材クリック音
-                    const woodClick = Math.sin(2 * Math.PI * 1500 * t) * Math.exp(-t * 80) * 0.1;
+                    // 4. 木材の響き（中音域の自然共鳴）
+                    const woodResonance = Math.sin(2 * Math.PI * 280 * t + Math.random() * 0.1) * woodDecay * 0.25;
                     
-                    // 全ての成分を合成
-                    const sample = fundamental + harmonic2 + harmonic3 + noise + resonance1 + resonance2 + woodClick;
+                    // 5. 打撃の反響（空洞内の音の跳ね返り）
+                    const echoComponent = Math.sin(2 * Math.PI * 420 * t) * Math.exp(-t * 15) * 0.2;
+                    
+                    // 6. 木材の乾いた響き（高音域の短い振動）
+                    const dryWoodTone = Math.sin(2 * Math.PI * 650 * t + Math.sin(2 * Math.PI * 1200 * t) * 0.2) * Math.exp(-t * 25) * 0.15;
+                    
+                    // 7. 木の繊維の振動（非常に短い高周波成分）
+                    const fiberVibration = (Math.random() * 2 - 1) * Math.exp(-t * 100) * 0.1 * Math.sin(2 * Math.PI * 1800 * t);
+                    
+                    // 8. 空洞共鳴の深み（低周波の豊かさ）
+                    const deepResonance = Math.sin(2 * Math.PI * 60 * t + Math.sin(2 * Math.PI * 3 * t) * 0.05) * hollowDecay * 0.3;
+                    
+                    // 全成分を自然な比率で合成（木材らしい音色）
+                    let sample = 
+                        impactNoise * 0.35 +           // 打撃音（主要）
+                        hollowResonance * 0.25 +       // 空洞共鳴
+                        surfaceTexture * 0.15 +        // 表面質感
+                        woodResonance * 0.15 +         // 木材響き
+                        echoComponent * 0.05 +         // 反響
+                        dryWoodTone * 0.03 +           // 乾いた音色
+                        fiberVibration * 0.01 +        // 繊維振動
+                        deepResonance * 0.01;          // 深い共鳴
+                    
+                    // 木材らしい非線形効果（わずかな歪み）
+                    if (Math.abs(sample) > 0.3) {
+                        sample = sample * (1 - Math.abs(sample) * 0.1);
+                    }
                     
                     // クリッピング防止
-                    const clampedSample = Math.max(-1, Math.min(1, sample * 0.8));
+                    const clampedSample = Math.max(-1, Math.min(1, sample * 0.85));
                     view.setInt16(44 + i * 2, clampedSample * 32767, true);
                 }
                 
