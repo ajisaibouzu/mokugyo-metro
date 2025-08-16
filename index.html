@@ -12,44 +12,105 @@
         }
 
         body {
-            font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'MS Mincho', serif;
+            background: #000000;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(218, 165, 32, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(218, 165, 32, 0.03) 0%, transparent 50%),
+                linear-gradient(0deg, rgba(218, 165, 32, 0.01) 0%, transparent 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 400px,
+                    rgba(218, 165, 32, 0.01) 400px,
+                    rgba(218, 165, 32, 0.01) 401px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 400px,
+                    rgba(218, 165, 32, 0.01) 400px,
+                    rgba(218, 165, 32, 0.01) 401px
+                );
+            pointer-events: none;
+            z-index: -1;
         }
 
         .container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 40px;
+            background: linear-gradient(145deg, rgba(20, 20, 20, 0.95), rgba(10, 10, 10, 0.95));
+            border-radius: 15px;
+            padding: 50px;
             text-align: center;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.8),
+                inset 0 2px 4px rgba(218, 165, 32, 0.1),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(10px);
-            max-width: 500px;
+            max-width: 520px;
             width: 90%;
+            border: 2px solid rgba(218, 165, 32, 0.4);
+            position: relative;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            background: linear-gradient(45deg, #daa520, #ffd700, #daa520);
+            border-radius: 16px;
+            z-index: -1;
+            opacity: 0.3;
         }
 
         h1 {
-            color: #333;
+            color: #ffd700;
             margin-bottom: 30px;
-            font-size: 2.2em;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            font-size: 2.4em;
+            text-shadow: 
+                2px 2px 6px rgba(0, 0, 0, 0.8),
+                0 0 15px rgba(255, 215, 0, 0.5);
+            font-weight: 500;
+            letter-spacing: 0.1em;
         }
 
         .tempo-display {
             font-size: 4em;
-            font-weight: bold;
-            color: #6366f1;
+            font-weight: 400;
+            color: #daa520;
             margin: 20px 0;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            text-shadow: 
+                2px 2px 6px rgba(0, 0, 0, 0.8),
+                0 0 25px rgba(218, 165, 32, 0.6);
+            font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
         }
 
         .bpm-label {
-            font-size: 1.2em;
-            color: #666;
+            font-size: 1.1em;
+            color: #ffd700;
             margin-bottom: 30px;
+            letter-spacing: 0.15em;
+            font-weight: 300;
+            text-shadow: 
+                1px 1px 3px rgba(0, 0, 0, 0.8),
+                0 0 10px rgba(255, 215, 0, 0.4);
         }
 
         .controls {
@@ -67,89 +128,156 @@
         }
 
         .tempo-btn {
-            background: #6366f1;
-            color: white;
-            border: none;
+            background: linear-gradient(145deg, #daa520, #b8860b);
+            color: #000000;
+            border: 2px solid #ffd700;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 1.5em;
+            width: 65px;
+            height: 65px;
+            font-size: 1.8em;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+            font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+            font-weight: bold;
         }
 
         .tempo-btn:hover {
-            background: #5855eb;
+            background: linear-gradient(145deg, #ffd700, #daa520);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+            box-shadow: 
+                0 6px 18px rgba(218, 165, 32, 0.4),
+                inset 0 2px 4px rgba(255, 255, 255, 0.4);
+        }
+
+        .tempo-btn:active {
+            transform: translateY(0px);
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.6),
+                inset 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .tempo-slider {
-            width: 200px;
+            width: 220px;
             margin: 0 20px;
+            -webkit-appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #333333, #666666);
+            outline: none;
+            border: 1px solid #daa520;
+        }
+
+        .tempo-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #ffd700, #daa520);
+            border: 2px solid #000000;
+            cursor: pointer;
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.6),
+                inset 0 1px 2px rgba(255, 255, 255, 0.3);
         }
 
         .start-stop-btn {
-            background: #10b981;
-            color: white;
-            border: none;
-            border-radius: 15px;
-            padding: 15px 40px;
-            font-size: 1.3em;
+            background: linear-gradient(145deg, #daa520, #b8860b);
+            color: #000000;
+            border: 3px solid #ffd700;
+            border-radius: 25px;
+            padding: 18px 45px;
+            font-size: 1.4em;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-            margin-top: 20px;
+            box-shadow: 
+                0 6px 20px rgba(0, 0, 0, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+            margin-top: 25px;
+            font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+            font-weight: 500;
+            letter-spacing: 0.1em;
         }
 
         .start-stop-btn:hover {
-            background: #059669;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            background: linear-gradient(145deg, #ffd700, #daa520);
+            transform: translateY(-3px);
+            box-shadow: 
+                0 8px 25px rgba(218, 165, 32, 0.4),
+                inset 0 2px 4px rgba(255, 255, 255, 0.4);
         }
 
         .start-stop-btn.stop {
-            background: #ef4444;
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+            background: linear-gradient(145deg, #dc143c, #b71c1c);
+            color: #ffffff;
+            border-color: #ff1744;
+            box-shadow: 
+                0 6px 20px rgba(220, 20, 60, 0.4),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
         }
 
         .start-stop-btn.stop:hover {
-            background: #dc2626;
-            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+            background: linear-gradient(145deg, #ff1744, #dc143c);
+            box-shadow: 
+                0 8px 25px rgba(255, 23, 68, 0.5),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
         }
 
         .mokugyo {
-            font-size: 5em;
-            margin: 20px 0;
-            transition: transform 0.1s ease;
+            width: 200px;
+            height: 200px;
+            margin: 25px auto;
+            transition: all 0.15s ease;
+            filter: drop-shadow(2px 2px 8px rgba(0, 0, 0, 0.3));
+        }
+
+        .mokugyo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .mokugyo.beat {
-            transform: scale(1.2);
+            transform: scale(1.15) rotate(2deg);
+            filter: drop-shadow(4px 4px 12px rgba(0, 0, 0, 0.4));
         }
 
         .beat-indicator {
-            width: 20px;
-            height: 20px;
-            background: #6366f1;
+            width: 25px;
+            height: 25px;
+            background: linear-gradient(145deg, #333333, #1a1a1a);
             border-radius: 50%;
-            margin: 20px auto;
-            transition: all 0.1s ease;
-            opacity: 0.3;
+            margin: 25px auto;
+            transition: all 0.15s ease;
+            opacity: 0.4;
+            border: 2px solid #daa520;
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.6),
+                inset 0 1px 2px rgba(218, 165, 32, 0.2);
         }
 
         .beat-indicator.active {
-            background: #ef4444;
+            background: linear-gradient(145deg, #daa520, #b8860b);
+            border-color: #ffd700;
             opacity: 1;
-            transform: scale(1.5);
+            transform: scale(1.4);
+            box-shadow: 
+                0 4px 12px rgba(218, 165, 32, 0.6),
+                0 0 15px rgba(255, 215, 0, 0.4),
+                inset 0 1px 2px rgba(255, 255, 255, 0.3);
         }
 
         .beat-indicator.bell {
-            background: #fbbf24;
-            box-shadow: 0 0 20px rgba(251, 191, 36, 0.7);
+            background: linear-gradient(145deg, #ffd700, #daa520);
+            border-color: #ffffff;
+            box-shadow: 
+                0 0 30px rgba(255, 215, 0, 0.9),
+                0 4px 15px rgba(0, 0, 0, 0.6),
+                inset 0 1px 3px rgba(255, 255, 255, 0.5);
             opacity: 1;
-            transform: scale(2);
+            transform: scale(1.8);
         }
 
         @media (max-width: 600px) {
@@ -179,9 +307,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>🪘 木魚メトロノーム</h1>
+        <h1>木魚韻律器</h1>
         
-        <div class="mokugyo" id="mokugyo">🪘</div>
+        <div class="mokugyo" id="mokugyo">
+            <img src="mokugyo-image.png" alt="木魚" style="width: 200px; height: 200px; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div style="display: none; font-size: 8em; line-height: 1;">🪵</div>
+        </div>
         
         <div class="tempo-display" id="tempoDisplay">120</div>
         <div class="bpm-label">BPM</div>
@@ -285,11 +416,8 @@
                     return;
                 }
                 
-                // 念のため既存のタイマーをクリア
-                if (this.intervalId) {
-                    clearInterval(this.intervalId);
-                    this.intervalId = null;
-                }
+                // 確実に既存のタイマーをクリア
+                this.forceStop();
                 
                 if (this.audioContext && this.audioContext.state === 'suspended') {
                     this.audioContext.resume();
@@ -301,13 +429,18 @@
                 
                 const interval = 60000 / this.tempo;
                 
-                // 最初のビートを実行
-                this.beat();
-                
-                // シンプルなタイマー
-                this.intervalId = setInterval(() => {
-                    this.beat();
-                }, interval);
+                // 少し遅延してから開始することで重複を防ぐ
+                setTimeout(() => {
+                    if (this.isPlaying) {  // まだ再生中の場合のみ
+                        // 最初のビートを実行
+                        this.beat();
+                        
+                        // 定期実行を開始
+                        this.intervalId = setInterval(() => {
+                            this.beat();
+                        }, interval);
+                    }
+                }, 10);  // 10ms の遅延
             }
             
             stop() {
@@ -317,6 +450,7 @@
             forceStop() {
                 this.isPlaying = false;
                 
+                // 確実にすべてのタイマーをクリア
                 if (this.intervalId) {
                     clearInterval(this.intervalId);
                     this.intervalId = null;
@@ -327,13 +461,31 @@
                     this.timeoutId = null;
                 }
                 
+                // 進行中のAudioContextの音源も停止
+                if (this.audioContext) {
+                    try {
+                        // 既存のオーディオソースを停止（可能な場合）
+                        if (this.audioContext.state === 'running') {
+                            // 特定の停止処理は不要（各音源は自動的に停止）
+                        }
+                    } catch (error) {
+                        // エラーは無視
+                    }
+                }
+                
                 this.startStopBtn.textContent = 'スタート';
                 this.startStopBtn.classList.remove('stop');
                 this.beatCount = 0;
             }
             
             beat() {
+                // 再生状態を確認
                 if (!this.isPlaying) {
+                    return;
+                }
+                
+                // AudioContextの状態も確認
+                if (!this.audioContext || this.audioContext.state !== 'running') {
                     return;
                 }
                 
@@ -383,24 +535,25 @@
                     attackGain.gain.setValueAtTime(1.2, now);
                     attackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);  // より短い減衰
                     
-                    // 2. 固い木材の基音（しっかりした低音）
-                    const solidBass = this.audioContext.createOscillator();
+                    // 2. 固い木材の基音（硬質で無機質な低音）
+                    const hardBass = this.audioContext.createOscillator();
                     const bassGain = this.audioContext.createGain();
                     const bassFilter = this.audioContext.createBiquadFilter();
                     
-                    solidBass.connect(bassFilter);
+                    hardBass.connect(bassFilter);
                     bassFilter.connect(bassGain);
                     bassGain.connect(this.audioContext.destination);
                     
-                    solidBass.type = 'triangle';  // よりソリッドな音質
-                    solidBass.frequency.setValueAtTime(120, now);  // 少し高めで固さを表現
-                    solidBass.frequency.exponentialRampToValueAtTime(100, now + 0.08);
+                    hardBass.type = 'square';  // 硬質で無機質な音質
+                    hardBass.frequency.setValueAtTime(120, now);  // より高めで硬さを表現
+                    hardBass.frequency.exponentialRampToValueAtTime(110, now + 0.08);  // 短い減衰で固さを表現
                     
-                    bassFilter.type = 'lowpass';
-                    bassFilter.frequency.setValueAtTime(200, now);  // 少し高めのカットオフ
+                    bassFilter.type = 'bandpass';  // より精密な周波数制御
+                    bassFilter.frequency.setValueAtTime(130, now);
+                    bassFilter.Q.setValueAtTime(8, now);  // 非常にシャープ
                     
-                    bassGain.gain.setValueAtTime(0.6, now + 0.005);
-                    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);  // より短い減衰
+                    bassGain.gain.setValueAtTime(0.7, now + 0.005);
+                    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);  // 短い減衰
                     
                     // 3. 固い木材の主要共鳴音（クリアで鋭い音程）
                     const woodResonance = this.audioContext.createOscillator();
@@ -442,25 +595,25 @@
                     secondaryGain.gain.setValueAtTime(0.25, now + 0.02);
                     secondaryGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);  // より短い減衰
                     
-                    // 5. 固い木材の中音域（密度のある響き）
-                    const midResonance = this.audioContext.createOscillator();
-                    const airGain = this.audioContext.createGain();
-                    const airFilter = this.audioContext.createBiquadFilter();
+                    // 5. 無機質な中音域（硬質で冷たい響き）
+                    const mechanicalMid = this.audioContext.createOscillator();
+                    const midGain = this.audioContext.createGain();
+                    const midFilter = this.audioContext.createBiquadFilter();
                     
-                    midResonance.connect(airFilter);
-                    airFilter.connect(airGain);
-                    airGain.connect(this.audioContext.destination);
+                    mechanicalMid.connect(midFilter);
+                    midFilter.connect(midGain);
+                    midGain.connect(this.audioContext.destination);
                     
-                    midResonance.type = 'triangle';
-                    midResonance.frequency.setValueAtTime(300, now);  // より高めの中音域
-                    midResonance.frequency.exponentialRampToValueAtTime(260, now + 0.4);  // より短い減衰
+                    mechanicalMid.type = 'square';  // 硬質で無機質
+                    mechanicalMid.frequency.setValueAtTime(350, now);  // より高めで硬さを表現
+                    mechanicalMid.frequency.exponentialRampToValueAtTime(320, now + 0.15);  // 短い減衰
                     
-                    airFilter.type = 'bandpass';
-                    airFilter.frequency.setValueAtTime(320, now);
-                    airFilter.Q.setValueAtTime(6, now);  // よりシャープ
+                    midFilter.type = 'bandpass';
+                    midFilter.frequency.setValueAtTime(360, now);
+                    midFilter.Q.setValueAtTime(12, now);  // 非常にシャープで無機質
                     
-                    airGain.gain.setValueAtTime(0.3, now + 0.03);
-                    airGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+                    midGain.gain.setValueAtTime(0.4, now + 0.02);
+                    midGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
                     
                     // 6. 鋭い高音クリック（固い木材の打撃アタック）
                     const sharpClick = this.audioContext.createOscillator();
@@ -482,12 +635,37 @@
                     clickGain.gain.setValueAtTime(0.3, now + 0.002);  // より強く
                     clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.015);  // より短く
                     
-                    // 再生開始（固い木材の響きを段階的に追加）
+                    // 7. 金属的な高音成分（無機質な響き）
+                    const metallicHigh = this.audioContext.createOscillator();
+                    const metallicGain = this.audioContext.createGain();
+                    const metallicFilter = this.audioContext.createBiquadFilter();
+                    
+                    metallicHigh.connect(metallicFilter);
+                    metallicFilter.connect(metallicGain);
+                    metallicGain.connect(this.audioContext.destination);
+                    
+                    metallicHigh.type = 'square';
+                    metallicHigh.frequency.setValueAtTime(2400, now);  // 非常に高い金属的な音
+                    metallicHigh.frequency.exponentialRampToValueAtTime(2000, now + 0.05);
+                    
+                    metallicFilter.type = 'bandpass';
+                    metallicFilter.frequency.setValueAtTime(2200, now);
+                    metallicFilter.Q.setValueAtTime(15, now);  // 極めてシャープ
+                    
+                    metallicGain.gain.setValueAtTime(0.2, now + 0.001);
+                    metallicGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                    
+                    // 再生開始（硬質で無機質な木材の響き）
                     attackSource.start(now);
                     attackSource.stop(now + 0.08);
                     
-                    solidBass.start(now + 0.005);
-                    solidBass.stop(now + 0.12);
+                    // 無機質な金属的高音
+                    metallicHigh.start(now + 0.001);
+                    metallicHigh.stop(now + 0.06);
+                    
+                    // 硬質で鋭い低音
+                    hardBass.start(now + 0.005);
+                    hardBass.stop(now + 0.1);
                     
                     woodResonance.start(now + 0.015);
                     woodResonance.stop(now + 0.3);
@@ -495,8 +673,9 @@
                     sharpResonance.start(now + 0.02);
                     sharpResonance.stop(now + 0.25);
                     
-                    midResonance.start(now + 0.03);
-                    midResonance.stop(now + 0.45);
+                    // 無機質な中音域
+                    mechanicalMid.start(now + 0.02);
+                    mechanicalMid.stop(now + 0.18);
                     
                     sharpClick.start(now + 0.002);
                     sharpClick.stop(now + 0.015);
