@@ -371,15 +371,29 @@
                     this.ensureAudioContext(); // モバイル対応
                 });
                 
-                // モバイル対応: 初回タッチでオーディオを有効化
-                const enableAudioOnFirstTouch = () => {
-                    this.ensureAudioContext();
-                    document.removeEventListener('touchstart', enableAudioOnFirstTouch);
-                    document.removeEventListener('click', enableAudioOnFirstTouch);
+                // スマホ対応: 複数のイベントでオーディオを有効化
+                const enableAudioOnInteraction = async () => {
+                    console.log('User interaction detected, enabling audio...');
+                    const success = await this.ensureAudioContext();
+                    if (success) {
+                        console.log('Audio successfully enabled');
+                        document.removeEventListener('touchstart', enableAudioOnInteraction);
+                        document.removeEventListener('touchend', enableAudioOnInteraction);
+                        document.removeEventListener('click', enableAudioOnInteraction);
+                        document.removeEventListener('mousedown', enableAudioOnInteraction);
+                    } else {
+                        console.warn('Audio enablement failed, keeping listeners');
+                    }
                 };
                 
-                document.addEventListener('touchstart', enableAudioOnFirstTouch, { once: true });
-                document.addEventListener('click', enableAudioOnFirstTouch, { once: true });
+                // 複数のイベントタイプでリスニング
+                document.addEventListener('touchstart', enableAudioOnInteraction, { passive: true });
+                document.addEventListener('touchend', enableAudioOnInteraction, { passive: true });
+                document.addEventListener('click', enableAudioOnInteraction);
+                document.addEventListener('mousedown', enableAudioOnInteraction);
+                
+                // スマホ専用: スタートボタンでも確実にオーディオを有効化
+                this.startStopBtn.addEventListener('touchstart', enableAudioOnInteraction, { passive: true });
                 
                 // キーボードショートカット
                 document.addEventListener('keydown', (e) => {
@@ -418,6 +432,10 @@
                     try {
                         await this.audioContext.resume();
                         console.log('AudioContext resumed');
+                        
+                        // スマホ対応: ダミー音声でオーディオコンテキストを完全にアンロック
+                        await this.playDummySound();
+                        
                     } catch (error) {
                         console.warn('Failed to resume AudioContext:', error);
                         return false;
@@ -425,6 +443,67 @@
                 }
                 
                 return this.audioContext && this.audioContext.state === 'running';
+            }
+            
+            async playDummySound() {
+                try {
+                    // iOS Safari対応: 複数の方法でダミー音声を再生
+                    const methods = [
+                        () => this.playOscillatorDummy(),
+                        () => this.playBufferDummy()
+                    ];
+                    
+                    for (const method of methods) {
+                        try {
+                            await method();
+                            console.log('Dummy sound method succeeded');
+                            break;
+                        } catch (error) {
+                            console.warn('Dummy sound method failed:', error);
+                        }
+                    }
+                    
+                    // 少し待機してからオーディオコンテキストの状態を確認
+                    return new Promise(resolve => {
+                        setTimeout(() => {
+                            const isRunning = this.audioContext.state === 'running';
+                            console.log(`AudioContext state after dummy: ${this.audioContext.state}`);
+                            resolve(isRunning);
+                        }, 150);
+                    });
+                } catch (error) {
+                    console.warn('Failed to play dummy sound:', error);
+                    return false;
+                }
+            }
+            
+            async playOscillatorDummy() {
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.001, this.audioContext.currentTime); // 極小音量
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.1);
+                
+                oscillator.start(this.audioContext.currentTime);
+                oscillator.stop(this.audioContext.currentTime + 0.1);
+            }
+            
+            async playBufferDummy() {
+                const buffer = this.audioContext.createBuffer(1, 1, this.audioContext.sampleRate);
+                const source = this.audioContext.createBufferSource();
+                const gainNode = this.audioContext.createGain();
+                
+                source.buffer = buffer;
+                source.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+                
+                source.start(this.audioContext.currentTime);
             }
             
             
@@ -461,15 +540,32 @@
                 // 確実に既存のタイマーをクリア
                 this.forceStop();
                 
-                // モバイル対応: AudioContextが正常に動作することを確認
-                const audioReady = await this.ensureAudioContext();
+                // スマホブラウザ特別対応: 複数回試行
+                let audioReady = false;
+                let attempts = 0;
+                const maxAttempts = 3;
+                
+                while (!audioReady && attempts < maxAttempts) {
+                    attempts++;
+                    console.log(`Audio enablement attempt ${attempts}/${maxAttempts}`);
+                    
+                    audioReady = await this.ensureAudioContext();
+                    
+                    if (!audioReady && attempts < maxAttempts) {
+                        // 短時間待機してリトライ
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                    }
+                }
+                
                 if (!audioReady) {
-                    console.warn('AudioContext not ready, cannot start playback');
-                    // UI feedback for user
-                    this.startStopBtn.textContent = 'タップして音声を有効化';
+                    console.warn('AudioContext not ready after multiple attempts');
+                    // より明確なユーザーフィードバック
+                    this.startStopBtn.textContent = '画面をタップしてから再試行';
+                    this.startStopBtn.style.fontSize = '1.1em';
                     setTimeout(() => {
                         this.startStopBtn.textContent = 'スタート';
-                    }, 2000);
+                        this.startStopBtn.style.fontSize = '';
+                    }, 3000);
                     return;
                 }
                 
