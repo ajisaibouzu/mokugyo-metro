@@ -428,17 +428,14 @@
             }
             
             initHTML5Audio() {
-                // 全デバイスでHTML5 Audioをバックアップとして準備（PC版音質で統一）
+                // 全デバイスでWeb Audio APIを優先使用、HTML5 Audioは最後の手段のみ
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 
-                if (isMobile) {
-                    this.useHTML5Audio = true;
-                    console.log('Mobile device detected, using HTML5 Audio with PC-quality sound');
-                } else {
-                    console.log('Desktop device, HTML5 Audio available as fallback with PC-quality sound');
-                }
+                // モバイルでもWeb Audio APIを最大限活用
+                this.useHTML5Audio = false; // 初期値はfalse
+                console.log('All devices will attempt Web Audio API first for consistent sound quality');
                 
-                // 木魚と鐘の高品質音声を生成
+                // HTML5 Audioは緊急時のみ使用
                 this.audioElements.mokugyo = new Audio();
                 this.audioElements.bell = new Audio();
                 
@@ -446,21 +443,10 @@
                 this.audioElements.mokugyo.preload = 'auto';
                 this.audioElements.bell.preload = 'auto';
                 
-                // 高品質な木魚と鐘の音声データを生成
-                const mokugyoData = this.generateMokugyoSound();
-                const bellData = this.generateBellSound();
-                
-                this.audioElements.mokugyo.src = mokugyoData;
-                this.audioElements.bell.src = bellData;
-                
-                // ロード
-                this.audioElements.mokugyo.load();
-                this.audioElements.bell.load();
-                
                 // 初回タッチで有効化
                 this.enableHTML5AudioOnTouch();
                 
-                console.log('HTML5 Audio initialized for mobile');
+                console.log('Audio system initialized - Web Audio API priority');
             }
             
             generateMokugyoSound() {
@@ -812,16 +798,25 @@
                 const enableAudio = async () => {
                     console.log('Enabling HTML5 Audio on user interaction...');
                     
+                    // 音声データを強制的に最新版で再生成
+                    const mokugyoData = this.generateMokugyoSound();
+                    const bellData = this.generateBellSound();
+                    
+                    // 古い音声データのURLを解放
+                    if (this.audioElements.mokugyo.src.startsWith('blob:')) {
+                        URL.revokeObjectURL(this.audioElements.mokugyo.src);
+                    }
+                    if (this.audioElements.bell.src.startsWith('blob:')) {
+                        URL.revokeObjectURL(this.audioElements.bell.src);
+                    }
+                    
+                    // 新しい音声データを設定
+                    this.audioElements.mokugyo.src = mokugyoData;
+                    this.audioElements.bell.src = bellData;
+                    
                     // 全ての音声要素を完全にロードして有効化
                     for (const [type, audio] of Object.entries(this.audioElements)) {
                         try {
-                            // 音声データの再生成（最新の状態で）
-                            if (type === 'mokugyo') {
-                                audio.src = this.generateMokugyoSound();
-                            } else if (type === 'bell') {
-                                audio.src = this.generateBellSound();
-                            }
-                            
                             // 強制ロード
                             audio.load();
                             
@@ -832,7 +827,7 @@
                             audio.currentTime = 0;
                             audio.muted = false;
                             
-                            console.log(`HTML5 Audio ${type} enabled successfully`);
+                            console.log(`HTML5 Audio ${type} enabled with latest sound data`);
                         } catch (error) {
                             console.warn(`Failed to enable HTML5 Audio ${type}:`, error);
                         }
@@ -884,33 +879,27 @@
                 // 確実に既存のタイマーをクリア
                 this.forceStop();
                 
-                // スマホブラウザ特別対応: 複数回試行
+                // 全デバイスでWeb Audio API使用を強制
                 let audioReady = false;
                 let attempts = 0;
-                const maxAttempts = 3;
+                const maxAttempts = 5; // 試行回数を増加
                 
                 while (!audioReady && attempts < maxAttempts) {
                     attempts++;
-                    console.log(`Audio enablement attempt ${attempts}/${maxAttempts}`);
+                    console.log(`Web Audio API enablement attempt ${attempts}/${maxAttempts}`);
                     
                     audioReady = await this.ensureAudioContext();
                     
                     if (!audioReady && attempts < maxAttempts) {
                         // 短時間待機してリトライ
-                        await new Promise(resolve => setTimeout(resolve, 200));
+                        await new Promise(resolve => setTimeout(resolve, 300));
                     }
                 }
                 
+                // Web Audio APIが失敗した場合でも動作継続（HTML5 Audioにフォールバック）
                 if (!audioReady) {
-                    console.warn('AudioContext not ready after multiple attempts');
-                    // より明確なユーザーフィードバック
-                    this.startStopBtn.textContent = '画面をタップしてから再試行';
-                    this.startStopBtn.style.fontSize = '1.1em';
-                    setTimeout(() => {
-                        this.startStopBtn.textContent = 'スタート';
-                        this.startStopBtn.style.fontSize = '';
-                    }, 3000);
-                    return;
+                    console.warn('Web Audio API failed, will use HTML5 Audio fallback');
+                    this.useHTML5Audio = true; // 緊急時のみHTML5 Audio使用
                 }
                 
                 this.isPlaying = true;
@@ -992,12 +981,19 @@
             }
             
             playMokugyoSound() {
-                // HTML5 Audioフォールバックを優先的に使用（スマホ対応）
-                if (this.useHTML5Audio || !this.audioContext || this.audioContext.state !== 'running') {
-                    this.playHTML5Audio('mokugyo');
+                // 全デバイスでWeb Audio APIを優先使用
+                if (this.audioContext && this.audioContext.state === 'running') {
+                    // Web Audio APIが利用可能な場合は必ずこちらを使用
+                    this.playWebAudioMokugyo();
                     return;
                 }
                 
+                // Web Audio APIが使用できない場合のみHTML5 Audioを使用
+                console.warn('Web Audio API unavailable, falling back to HTML5 Audio');
+                this.playHTML5Audio('mokugyo');
+            }
+            
+            playWebAudioMokugyo() {
                 try {
                     const now = this.audioContext.currentTime;
                     
@@ -1172,12 +1168,19 @@
             
             
             playBellSound() {
-                // HTML5 Audioフォールバックを優先的に使用（スマホ対応）
-                if (this.useHTML5Audio || !this.audioContext || this.audioContext.state !== 'running') {
-                    this.playHTML5Audio('bell');
+                // 全デバイスでWeb Audio APIを優先使用
+                if (this.audioContext && this.audioContext.state === 'running') {
+                    // Web Audio APIが利用可能な場合は必ずこちらを使用
+                    this.playWebAudioBell();
                     return;
                 }
                 
+                // Web Audio APIが使用できない場合のみHTML5 Audioを使用
+                console.warn('Web Audio API unavailable for bell, falling back to HTML5 Audio');
+                this.playHTML5Audio('bell');
+            }
+            
+            playWebAudioBell() {
                 try {
                     const now = this.audioContext.currentTime;
                     
